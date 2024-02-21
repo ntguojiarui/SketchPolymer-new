@@ -1,0 +1,1 @@
+/usr/bin/c++  -O2 -g   CMakeFiles/cpu.dir/main.cc.o CMakeFiles/cpu.dir/Common/murmur3.cc.o  -o cpu 
