@@ -1,0 +1,251 @@
+#ifndef _SP_H_
+#define _SP_H_
+
+#include <bits/stdc++.h>
+
+template<typename ID_TYPE>
+class Stage1 {
+public:
+    Stage1() {}
+    Stage1(uint32_t memory, uint32_t dim): d(dim) {
+        m = memory * 1024 / sizeof(uint8_t) / d;
+        counter = new uint8_t* [d];
+        for (int i = 0; i < d; ++i) {
+            counter[i] = new uint8_t [m];
+            memset(counter[i], 0, m * sizeof(uint8_t));
+        }
+    }
+    ~Stage1() {
+        for (int i = 0; i < d; ++i) {
+            delete[] counter[i];
+        }
+        delete[] counter;
+    }
+    void insert(ID_TYPE id) {
+        for (int i = 0; i < d; ++i) {
+            uint32_t index = hash(id, i) % m;
+            if(counter[i][index]+1) counter[i][index]++;
+        }
+    }
+    uint32_t query(ID_TYPE id) {
+        uint32_t frequency = std::numeric_limits<uint32_t>::max();
+        for (int i = 0; i < d; ++i) {
+            uint32_t index = hash(id, i) % m;
+            frequency = MIN(frequency, counter[i][index]);
+        }
+        return frequency;
+    }
+private:
+    uint32_t d;
+    uint32_t m;
+    uint8_t** counter;
+};
+
+template<typename ID_TYPE>
+class Stage2 {
+public:
+    struct stage2_block{
+        uint32_t frequency;
+        uint32_t value;
+    };
+    Stage2() {};
+    Stage2(uint32_t memory, uint32_t dim): d(dim) {
+        m = memory * 1024 / (sizeof(stage2_block)) / d;
+        frq_val = new stage2_block* [d];
+        for (int i = 0; i < d; ++i) {
+            frq_val[i] = new stage2_block [m];
+            memset(frq_val[i], 0, m * sizeof(stage2_block));
+        }
+    }
+    ~Stage2() {
+        for (int i = 0; i < d; ++i) {
+            delete[] frq_val[i];
+        }
+        delete[] frq_val;
+    }
+    static inline bool stage2_block_cmp(struct stage2_block a,struct stage2_block b)
+    {
+        return a.frequency < b.frequency;
+    }
+    void insert(ID_TYPE id, uint32_t t) {
+        uint32_t *index = new uint32_t[d];
+        struct stage2_block s_b;
+        s_b.frequency=1<<30;
+        s_b.value=0;
+        memset(index,0,d*sizeof(uint32_t));
+        for (int i = 0; i < d; ++i) {
+            index[i] = hash(id, 33 + i) % m;
+            if(s_b.frequency > frq_val[i][index[i]].frequency)
+            {
+                s_b.frequency=frq_val[i][index[i]].frequency;
+                s_b.value=frq_val[i][index[i]].value;
+            }
+        }
+        s_b.frequency++;
+        s_b.value=MAX(s_b.value,t);
+        for(int i=0; i<d; ++i)
+        {
+            if(frq_val[i][index[i]].frequency < s_b.frequency)
+            {
+                frq_val[i][index[i]].frequency=s_b.frequency;
+                frq_val[i][index[i]].value=s_b.value;
+            }
+        }
+        delete[] index;
+    }
+    void query(ID_TYPE id, uint32_t* f, uint32_t* t) {
+        *f = 1<<30;
+        for (int i = 0; i < d; ++i) {
+            uint32_t index = hash(id, 33 + i) % m;
+            if(*f > frq_val[i][index].frequency)
+            {
+                *f=frq_val[i][index].frequency;
+                *t=frq_val[i][index].value;
+            }
+        }
+        return;
+    }
+private:
+    uint32_t d;
+    uint32_t m;
+    struct stage2_block** frq_val;
+};
+
+template<typename ID_TYPE>
+class Stage3 {
+public:
+    Stage3() {}
+    Stage3(uint32_t memory, uint32_t dim): d(dim) {
+        m = memory * 1024 / sizeof(uint16_t) / d;
+        counter = new uint16_t* [d];
+        for (int i = 0; i < d; ++i) {
+            counter[i] = new uint16_t [m];
+            memset(counter[i], 0, m * sizeof(uint16_t));
+        }
+    }
+    ~Stage3() {
+        for (int i = 0; i < d; ++i) {
+            delete[] counter[i];
+        }
+        delete[] counter;
+    }
+    void insert(ID_TYPE id, uint32_t t) {
+        uint32_t *index = new uint32_t[d];
+        memset(index,0,d*sizeof(uint32_t));
+        uint16_t min_counter=std::numeric_limits<uint16_t>::max();
+        for (int i = 0; i < d; ++i) {
+            index[i] = hash(id * t, i) % m;
+            min_counter = MIN(min_counter,counter[i][index[i]]);
+        }
+        if (min_counter != std::numeric_limits<uint16_t>::max()) min_counter++;
+        for(int i=0;i<d;++i)
+        {
+            counter[i][index[i]] = MAX(counter[i][index[i]],min_counter);
+        }
+        delete[] index;
+    }
+    uint32_t query(ID_TYPE id, uint32_t t) {
+        uint16_t frequency = std::numeric_limits<uint16_t>::max();
+        for (int i = 0; i < d; ++i) {
+            uint32_t index = hash(id * t, i) % m;
+            frequency = MIN(frequency, counter[i][index]);
+        }
+        return frequency;
+    }
+private:
+    uint32_t d;
+    uint32_t m;
+    uint16_t** counter;
+};
+
+template<typename ID_TYPE>
+class Stage4 {
+public:
+    Stage4() {}
+    Stage4(uint32_t memory, uint32_t dim): d(dim) {
+        m = memory * 1024 / d;
+        counter = new bool* [d];
+        for (int i = 0; i < d; ++i) {
+            counter[i] = new bool [m];
+            memset(counter[i], false, m * sizeof(bool));
+        }
+    }
+    ~Stage4(){
+        for (int i = 0; i < d; ++i) {
+            delete[] counter[i];
+        }
+        delete[] counter;
+    }
+    void insert(ID_TYPE id, uint32_t t) {
+        for (int i = 0; i < d; ++i) {
+            uint32_t index = hash(id - t, 23 + t) % m;
+            counter[i][index] = true;
+        }
+    }
+    bool query(ID_TYPE id, uint32_t t) {
+        for (int i = 0; i < d; ++i) {
+            uint32_t index = hash(id - t, 23 + t) % m;
+            if (!counter[i][index])
+                return false;
+        }
+        return true;
+    }
+private:
+    uint32_t d;
+    uint32_t m;
+    bool** counter;
+};
+
+template<typename ID_TYPE, typename DATA_TYPE>
+class SketchPolymer {
+public:
+    SketchPolymer() {}
+    SketchPolymer(uint32_t memory){
+        threshold = 50;
+        log_base = 1.5;
+        stage1 = new Stage1<ID_TYPE>(0.2 * memory, 3);
+        stage2 = new Stage2<ID_TYPE>(0.3 * memory, 5);
+        stage3 = new Stage3<ID_TYPE>(0.4 * memory, 3);
+        stage4 = new Stage4<ID_TYPE>(0.1 * memory, 2);
+    }
+    ~SketchPolymer()
+    {
+        delete stage1;
+        delete stage2;
+        delete stage3;
+        delete stage4;
+    }
+    void insert(ID_TYPE id, DATA_TYPE T) {
+        if (stage1->query(id) < threshold) {
+            stage1->insert(id);
+            return;
+        }
+        uint32_t t = (log(T) / log(log_base));
+        stage2->insert(id, t);
+        stage3->insert(id, t);
+        stage4->insert(id, t);
+    }
+    DATA_TYPE query(ID_TYPE id, double w) {
+        uint32_t f, t;
+        stage2->query(id, &f, &t);
+        int m = (1 - w) * f;
+        while (m > 0 && t) {
+            if (stage4->query(id, t)) {
+                m -= stage3->query(id, t);
+            }
+            t--;
+        }
+        return pow(log_base, t + 0.5);
+    }
+private:
+    Stage1<ID_TYPE>* stage1;
+    Stage2<ID_TYPE>* stage2;
+    Stage3<ID_TYPE>* stage3;
+    Stage4<ID_TYPE>* stage4;
+    uint32_t threshold;
+    double log_base;
+};
+
+
+
+#endif
