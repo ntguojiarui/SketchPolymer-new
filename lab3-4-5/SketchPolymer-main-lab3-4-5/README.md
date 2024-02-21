@@ -1,3 +1,3 @@
-lab3分析实验
-lab4多线程实验
-lab5第一级记录max log value以对小流进行估计
+lab3: analysis experiment  
+lab4: multi-thread experiment  
+lab5: small flow estimation experiment  
