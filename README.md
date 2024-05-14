@@ -1,4 +1,4 @@
-# SketchPolymer-TKDE  
+# SketchPolymer 
 lab1: parameter adjustment experiment  
 lab2: comparative experiment  
 lab3: analysis experiment  
