@@ -1,1 +1,1 @@
-对比试验
+lab2: comparative experiment
